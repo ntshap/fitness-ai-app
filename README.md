@@ -99,6 +99,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact 📧
 
-Your Name - your.email@example.com
+Natasha - natasharondonuwu@gmail.com
 
 Project Link: [https://github.com/yourusername/fitness-ai-app](https://github.com/yourusername/fitness-ai-app)
