@@ -6,7 +6,15 @@ import 'package:fitness_ai_app/widgets/onboarding/selection_card.dart';
 
 class GoalsScreen extends StatefulWidget {
   final VoidCallback onContinue;
-  const GoalsScreen({super.key, required this.onContinue});
+  final String? selectedGoal;
+  final Function(String) onGoalSelected;
+
+  const GoalsScreen({
+    super.key,
+    required this.onContinue,
+    this.selectedGoal,
+    required this.onGoalSelected,
+  });
 
   @override
   State<GoalsScreen> createState() => _GoalsScreenState();
@@ -23,6 +31,19 @@ class _GoalsScreenState extends State<GoalsScreen> {
   ];
 
   String? _selectedGoal;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGoal = widget.selectedGoal;
+  }
+
+  void _selectGoal(String goal) {
+    setState(() {
+      _selectedGoal = goal;
+    });
+    widget.onGoalSelected(goal);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +78,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                         child: SelectionCard(
                           title: goal,
                           isSelected: _selectedGoal == goal,
-                          onTap: () => setState(() => _selectedGoal = goal),
+                          onTap: () => _selectGoal(goal),
                         ),
                       );
                     }).toList(),

@@ -1,7 +1,11 @@
+// File: android/build.gradle.kts
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        // Ini adalah baris yang diperbaiki dengan sintaks Kotlin yang benar
+        maven { url = uri("https://www.jitpack.io") }
     }
 }
 

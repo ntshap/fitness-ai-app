@@ -6,7 +6,23 @@ import 'package:fitness_ai_app/widgets/onboarding/data_slider.dart';
 
 class DataScreen extends StatefulWidget {
   final VoidCallback onContinue;
-  const DataScreen({super.key, required this.onContinue});
+  final int age;
+  final double height;
+  final double weight;
+  final Function(double) onAgeChanged;
+  final Function(double) onHeightChanged;
+  final Function(double) onWeightChanged;
+
+  const DataScreen({
+    super.key,
+    required this.onContinue,
+    required this.age,
+    required this.height,
+    required this.weight,
+    required this.onAgeChanged,
+    required this.onHeightChanged,
+    required this.onWeightChanged,
+  });
 
   @override
   State<DataScreen> createState() => _DataScreenState();
@@ -16,6 +32,14 @@ class _DataScreenState extends State<DataScreen> {
   double _age = 25;
   double _height = 170;
   double _weight = 65;
+
+  @override
+  void initState() {
+    super.initState();
+    _age = widget.age.toDouble();
+    _height = widget.height;
+    _weight = widget.weight;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +70,10 @@ class _DataScreenState extends State<DataScreen> {
                 max: 80,
                 divisions: 65,
                 unit: 'tahun',
-                onChanged: (value) => setState(() => _age = value),
+                onChanged: (value) {
+                  setState(() => _age = value);
+                  widget.onAgeChanged(value);
+                },
               ),
               const SizedBox(height: 24),
                DataSlider(
@@ -56,7 +83,10 @@ class _DataScreenState extends State<DataScreen> {
                 max: 220,
                 divisions: 80,
                 unit: 'cm',
-                onChanged: (value) => setState(() => _height = value),
+                onChanged: (value) {
+                  setState(() => _height = value);
+                  widget.onHeightChanged(value);
+                },
               ),
                const SizedBox(height: 24),
                DataSlider(
@@ -66,7 +96,10 @@ class _DataScreenState extends State<DataScreen> {
                 max: 150,
                 divisions: 110,
                 unit: 'kg',
-                onChanged: (value) => setState(() => _weight = value),
+                onChanged: (value) {
+                  setState(() => _weight = value);
+                  widget.onWeightChanged(value);
+                },
               ),
               const Spacer(),
               AuthButton(

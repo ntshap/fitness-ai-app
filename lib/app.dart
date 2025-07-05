@@ -1,10 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_ai_app/config/app_colors.dart';
 import 'package:fitness_ai_app/screens/auth/landing_screen.dart';
+import 'package:fitness_ai_app/screens/main_screen.dart';
+import 'package:fitness_ai_app/services/simple_auth_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class FitnessApp extends StatelessWidget {
+class FitnessApp extends StatefulWidget {
   const FitnessApp({super.key});
+
+  @override
+  State<FitnessApp> createState() => _FitnessAppState();
+}
+
+class _FitnessAppState extends State<FitnessApp> {
+  final SimpleAuthService _authService = SimpleAuthService();
+  bool _isInitialized = false;
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Simplified initialization without session persistence for now
+    setState(() {
+      _isInitialized = true;
+      _isLoggedIn = false; // Always start with login screen for now
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +61,21 @@ class FitnessApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LandingScreen(), // Halaman awal adalah LandingScreen
+      home: _buildHome(),
     );
+  }
+
+  Widget _buildHome() {
+    if (!_isInitialized) {
+      // Show loading screen while initializing
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    // Navigate to appropriate screen based on login status
+    return _isLoggedIn ? const MainScreen() : const LandingScreen();
   }
 }

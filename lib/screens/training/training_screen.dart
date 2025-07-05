@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:camera/camera.dart';
-import 'package:fitness_ai_app/config/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:fitness_ai_app/services/pose_detector_service.dart';
 import 'package:fitness_ai_app/widgets/training/pose_painter.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,12 +14,9 @@ class TrainingScreen extends StatefulWidget {
 
 class _TrainingScreenState extends State<TrainingScreen> {
   CameraController? _cameraController;
-  bool _isCameraInitialized = false;
   late PoseDetectorService _poseDetectorService;
-  List<double?>? _keypoints;
-  Size? _imageSize;
-
-  bool _isProcessing = false;
+  List<KeyPoint>? _keyPoints; // Tipe data diubah menjadi List<KeyPoint>
+  bool _isCameraInitialized = false;
 
   @override
   void initState() {
@@ -28,57 +25,48 @@ class _TrainingScreenState extends State<TrainingScreen> {
     _initializeCamera();
   }
 
-  Future<void> _initializeCamera() async {
-    var status = await Permission.camera.request();
-    if (status.isGranted) {
-      final cameras = await availableCameras();
-      if (cameras.isNotEmpty) {
-        final frontCamera = cameras.firstWhere(
-          (camera) => camera.lensDirection == CameraLensDirection.front,
-          orElse: () => cameras.first,
-        );
-
-        _cameraController = CameraController(
-          frontCamera,
-          ResolutionPreset.high,
-          enableAudio: false,
-        );
-
-        await _cameraController!.initialize();
-        if (!mounted) return;
-
-        setState(() {
-          _isCameraInitialized = true;
-          _imageSize = Size(
-            _cameraController!.value.previewSize!.height,
-            _cameraController!.value.previewSize!.width,
-          );
-        });
-
-        _cameraController!.startImageStream(_processCameraImage);
-      }
-    }
-  }
-
-  void _processCameraImage(CameraImage image) {
-    if (_isProcessing) return;
-    _isProcessing = true;
-    _poseDetectorService.processCameraImage(image).then((keypoints) {
-      if (mounted) {
-        setState(() {
-          _keypoints = keypoints;
-        });
-      }
-      _isProcessing = false;
-    });
-  }
-
   @override
   void dispose() {
-    _cameraController?.stopImageStream();
     _cameraController?.dispose();
     _poseDetectorService.close();
     super.dispose();
+  }
+
+  Future<void> _initializeCamera() async {
+    var cameraPermission = await Permission.camera.request();
+    if (cameraPermission.isGranted) {
+      final cameras = await availableCameras();
+      final frontCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+
+      _cameraController = CameraController(
+        frontCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+
+      await _cameraController!.initialize();
+      await _cameraController!.startImageStream(_processCameraImage);
+      
+      if (mounted) {
+        setState(() {
+          _isCameraInitialized = true;
+        });
+      }
+    } else {
+      // Handle permission denied
+    }
+  }
+
+  void _processCameraImage(CameraImage image) async {
+    final keyPoints = await _poseDetectorService.processCameraImage(image);
+    if (mounted) {
+      setState(() {
+        _keyPoints = keyPoints; // Ini akan menyelesaikan error 'invalid_assignment'
+      });
+    }
   }
 
   @override
@@ -86,30 +74,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (!_isCameraInitialized) {
       return const Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(color: AppColors.primary),
-              SizedBox(height: 16),
-              Text('Mempersiapkan kamera...'),
-            ],
-          ),
+          child: CircularProgressIndicator(),
         ),
       );
     }
-    
     return Scaffold(
       body: Stack(
-        fit: StackFit.expand,
         children: [
           CameraPreview(_cameraController!),
-          if (_keypoints != null && _imageSize != null)
+          if (_keyPoints != null)
             CustomPaint(
-              painter: PosePainter(
-                keypoints: _keypoints!,
-                originalImageSize: _imageSize!,
-                canvasSize: MediaQuery.of(context).size,
-              ),
+              painter: PosePainter(keyPoints: _keyPoints!),
             ),
         ],
       ),

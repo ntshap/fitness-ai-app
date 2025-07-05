@@ -6,14 +6,35 @@ import 'package:fitness_ai_app/widgets/onboarding/selection_card.dart';
 
 class GenderScreen extends StatefulWidget {
   final VoidCallback onContinue;
-  const GenderScreen({super.key, required this.onContinue});
+  final String? selectedGender;
+  final Function(String) onGenderSelected;
+
+  const GenderScreen({
+    super.key,
+    required this.onContinue,
+    this.selectedGender,
+    required this.onGenderSelected,
+  });
 
   @override
   State<GenderScreen> createState() => _GenderScreenState();
 }
 
 class _GenderScreenState extends State<GenderScreen> {
-  int? _selectedGender; // 0 for male, 1 for female
+  String? _selectedGender;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGender = widget.selectedGender;
+  }
+
+  void _selectGender(String gender) {
+    setState(() {
+      _selectedGender = gender;
+    });
+    widget.onGenderSelected(gender);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +64,8 @@ class _GenderScreenState extends State<GenderScreen> {
                     child: SelectionCard(
                       title: 'Pria',
                       icon: Icons.male,
-                      isSelected: _selectedGender == 0,
-                      onTap: () => setState(() => _selectedGender = 0),
+                      isSelected: _selectedGender == 'Pria',
+                      onTap: () => _selectGender('Pria'),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -52,8 +73,8 @@ class _GenderScreenState extends State<GenderScreen> {
                     child: SelectionCard(
                       title: 'Wanita',
                       icon: Icons.female,
-                      isSelected: _selectedGender == 1,
-                      onTap: () => setState(() => _selectedGender = 1),
+                      isSelected: _selectedGender == 'Wanita',
+                      onTap: () => _selectGender('Wanita'),
                     ),
                   ),
                 ],
