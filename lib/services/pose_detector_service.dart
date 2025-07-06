@@ -85,7 +85,7 @@ class PoseDetectorService {
       final output = List.filled(1 * 1 * 17 * 3, 0.0).reshape([1, 1, 17, 3]);
 
       // Jalankan inferensi
-      _interpreter.run(input, output);
+      _interpreter?.run(input, output);
 
       // Proses output menjadi List<KeyPoint>
       final keypoints = <KeyPoint>[];

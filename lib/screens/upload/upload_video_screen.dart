@@ -1,12 +1,10 @@
 import 'dart:io';
-// Import 'analysis_result.dart' tidak lagi digunakan di sini dan telah dihapus.
+import 'package:fitness_ai_app/config/app_colors.dart';
 import 'package:fitness_ai_app/screens/upload/analysis_results_screen.dart';
 import 'package:fitness_ai_app/services/enhanced_video_analysis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
-import 'package:fitness_ai_app/config/app_colors.dart';
-import 'package:fitness_ai_app/widgets/auth/auth_button.dart';
 
 class UploadVideoScreen extends StatefulWidget {
   const UploadVideoScreen({super.key});
@@ -17,96 +15,13 @@ class UploadVideoScreen extends StatefulWidget {
 
 class _UploadVideoScreenState extends State<UploadVideoScreen> {
   File? _videoFile;
-  final ImagePicker _picker = ImagePicker();
   VideoPlayerController? _videoPlayerController;
+  final ImagePicker _picker = ImagePicker();
+
   bool _isAnalyzing = false;
-  String _analysisMessage = '';
-  double _analysisProgress = 0.0;
-
-  // Fungsi untuk memilih video dari galeri
-  Future<void> _pickVideo() async {
-    final XFile? pickedFile = await _picker.pickVideo(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      _videoFile = File(pickedFile.path);
-      // Inisialisasi video player setelah video dipilih
-      _videoPlayerController = VideoPlayerController.file(_videoFile!)
-        ..initialize().then((_) {
-          setState(() {});
-          _videoPlayerController?.play();
-          _videoPlayerController?.setLooping(true);
-        });
-    }
-  }
-
-  // Fungsi untuk memulai proses analisis video
-  void _analyzeVideo() async {
-    if (_videoFile == null) return;
-
-    setState(() {
-      _isAnalyzing = true;
-      _analysisMessage = 'Starting analysis...';
-      _analysisProgress = 0.0;
-    });
-
-    try {
-      final analysisService = EnhancedVideoAnalysisService();
-      final result = await analysisService.analyzeVideoWithVisualOverlays(
-        _videoFile!.path,
-        onProgress: (progress) {
-          if (mounted) {
-            setState(() {
-              _analysisMessage = progress.message;
-              _analysisProgress = progress.progress;
-            });
-          }
-        },
-      );
-
-      // Navigasi ke layar hasil analisis jika proses berhasil
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalysisResultsScreen(result: result),
-          ),
-        );
-      }
-    } catch (e) {
-      // Menampilkan pesan error yang lebih spesifik
-      String errorMessage = 'Error saat menganalisis video';
-      
-      if (e.toString().contains('No frames could be extracted')) {
-        errorMessage = 'Tidak dapat mengekstrak frame dari video. Pastikan format video didukung.';
-      } else if (e.toString().contains('No valid pose data detected')) {
-        errorMessage = 'Tidak dapat mendeteksi pose dalam video. Pastikan orang terlihat jelas di video.';
-      } else if (e.toString().contains('Video is too long')) {
-        errorMessage = 'Video terlalu panjang. Maksimal 5 menit.';
-      } else if (e.toString().contains('Video file not found')) {
-        errorMessage = 'File video tidak ditemukan.';
-      } else if (e.toString().contains('timed out')) {
-        errorMessage = 'Analisis video memakan waktu terlalu lama. Coba video yang lebih pendek.';
-      }
-      
-      print('Video analysis error: $e');
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    } finally {
-      // Memastikan status 'isAnalyzing' kembali ke false setelah selesai
-      if (mounted) {
-        setState(() {
-          _isAnalyzing = false;
-        });
-      }
-    }
-  }
+  double _progress = 0.0;
+  final String _selectedExercise = 'squat';
+  String _debugLog = '';
 
   @override
   void dispose() {
@@ -114,103 +29,212 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
     super.dispose();
   }
 
+  Future<void> _pickVideo() async {
+    try {
+      final XFile? pickedFile = await _picker.pickVideo(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        _videoFile = File(pickedFile.path);
+        _videoPlayerController = VideoPlayerController.file(_videoFile!)
+          ..initialize().then((_) {
+            setState(() {});
+            _videoPlayerController?.play();
+            _videoPlayerController?.setLooping(true);
+          });
+      }
+    } catch (e) {
+      print("Error picking video: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memilih video.')),
+      );
+    }
+  }
+
+  /// Starts the video analysis process.
+  /// This now calls the service that runs the analysis in the background,
+  /// keeping the UI responsive.
+  void _analyzeVideo() async {
+    if (_videoFile == null) return;
+
+    // Stop the video player before analysis
+    _videoPlayerController?.pause();
+
+    setState(() {
+      _isAnalyzing = true;
+      _progress = 0.0;
+      _debugLog = '';
+    });
+
+    try {
+      final analysisResult = await EnhancedVideoAnalysisService.analyze(
+        videoPath: _videoFile!.path,
+        exerciseType: _selectedExercise,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+            });
+          }
+        },
+        onLog: (log) {
+          if (mounted) {
+            setState(() {
+              _debugLog += log + '\n';
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        // Use pushReplacement to avoid returning to the analysis screen.
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnalysisResultsScreen(
+              result: analysisResult,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error during analysis: $e');
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false; // Stop analyzing on error
+          _debugLog += '\nERROR: $e\n';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Analisis video gagal:\n$e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Unggah Video'),
+        title: const Text(
+          'Unggah & Analisis Video',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: AppColors.primary,
+        iconTheme: const IconThemeData(color: Colors.black),
+        elevation: 0,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Center(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: constraints.maxHeight,
-                ),
-                child: SingleChildScrollView(
-                  child: IntrinsicHeight(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_videoFile == null)
-                          GestureDetector(
-                            onTap: _pickVideo,
-                            child: Container(
-                              height: 200,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.primary, width: 2),
-                              ),
-                              child: const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.video_library, size: 50, color: AppColors.primary),
-                                  SizedBox(height: 8),
-                                  Text('Ketuk untuk memilih video', style: TextStyle(color: AppColors.primary)),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized)
-                                  AspectRatio(
-                                    aspectRatio: _videoPlayerController!.value.aspectRatio,
-                                    child: VideoPlayer(_videoPlayerController!),
-                                  )
-                                else
-                                  const SizedBox(
-                                    height: 200,
-                                    child: Center(child: CircularProgressIndicator()),
-                                  ),
-                                const SizedBox(height: 20),
-                                if (_isAnalyzing)
-                                  Column(
-                                    children: [
-                                      LinearProgressIndicator(
-                                        value: _analysisProgress,
-                                        backgroundColor: Colors.grey[300],
-                                        color: AppColors.primary,
-                                        minHeight: 10,
-                                      ),
-                                      const SizedBox(height: 20),
-                                      Text(
-                                        _analysisMessage,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  )
-                                else
-                                  AuthButton(
-                                    onPressed: _isAnalyzing ? null : _analyzeVideo,
-                                    text: 'Analisis Video',
-                                  ),
-                                const SizedBox(height: 10),
-                                TextButton(
-                                  onPressed: _isAnalyzing ? null : _pickVideo,
-                                  child: const Text('Pilih video lain', style: TextStyle(color: AppColors.primary)),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
+              child: _isAnalyzing ? _buildAnalysisProgress() : _buildVideoUploader(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalysisProgress() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 80,
+          height: 80,
+          child: CircularProgressIndicator(
+            value: _progress,
+            strokeWidth: 6,
+            backgroundColor: Colors.grey[300],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Menganalisis Video...',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${(_progress * 100).toStringAsFixed(0)}%',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Proses ini mungkin memakan waktu beberapa saat. Mohon jangan tutup aplikasi.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVideoUploader() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (_videoFile != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
+          AspectRatio(
+            aspectRatio: _videoPlayerController!.value.aspectRatio,
+            child: VideoPlayer(_videoPlayerController!),
+          )
+        else
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[400]!),
+            ),
+            child: const Center(
+              child: Text(
+                'Pratinjau video akan muncul di sini',
+                style: TextStyle(color: Colors.grey),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        const SizedBox(height: 24),
+        ElevatedButton.icon(
+          onPressed: _pickVideo,
+          icon: const Icon(Icons.video_library),
+          label: const Text('Pilih Video dari Galeri'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.secondaryText,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: _videoFile != null ? _analyzeVideo : null,
+          icon: const Icon(Icons.analytics),
+          label: const Text('Analisis Video'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        if (_debugLog.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            color: Colors.black12,
+            child: Text(
+              _debugLog,
+              style: const TextStyle(fontSize: 12, color: Colors.red),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

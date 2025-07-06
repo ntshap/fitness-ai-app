@@ -232,7 +232,7 @@ class VideoFrameProcessor {
       await controller.initialize();
       
       final duration = controller.value.duration.inMilliseconds / 1000.0;
-      final fps = controller.value.frameRate ?? 30.0;
+      final fps = 30.0; // Default frame rate since frameRate property doesn't exist
       
       await controller.dispose();
       
