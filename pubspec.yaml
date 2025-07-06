@@ -34,6 +34,7 @@ dependencies:
 
   # Video Processing & Frame Extraction
   video_thumbnail: ^0.5.3
+  video_compress: ^3.1.2
 
   # Database
   sqflite: ^2.3.3
@@ -44,6 +45,8 @@ dependencies:
   shared_preferences: ^2.2.3
   crypto: ^3.0.3
 
+  # Video Encoding
+  # ffmpeg_kit_flutter: ^5.1.0  # Temporarily disabled due to compatibility issues
 
 dev_dependencies:
   flutter_test:

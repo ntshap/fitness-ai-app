@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+// import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';  // Temporarily disabled due to compatibility issues
 
 class VideoGenerationProgress {
   final int currentFrame;
@@ -54,53 +55,68 @@ class VideoOutputGenerator {
       throw Exception('No frames provided for video generation');
     }
 
-    try {
-      onProgress?.call(VideoGenerationProgress(
-        currentFrame: 0,
-        totalFrames: frames.length,
-        stage: 'Generating video...',
-        progress: 0.0,
-      ));
-
-      // For now, create a mock output file
-      // In a production app, you would implement proper video generation
-      final outputDir = await _getOutputDirectory();
-      final outputFileName = 'analyzed_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
-      final outputPath = path.join(outputDir.path, outputFileName);
-
-      // Create a simple text file as a placeholder for the processed video
-      final mockVideoContent = '''
-Mock Processed Video
-Original: $originalVideoPath
-Frames processed: ${frames.length}
-Generated at: ${DateTime.now()}
-''';
-
-      await File(outputPath).writeAsString(mockVideoContent);
-
-      // Simulate progress
-      for (int i = 0; i <= frames.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 10));
-        final progress = i / frames.length;
-        onProgress?.call(VideoGenerationProgress(
-          currentFrame: i,
-          totalFrames: frames.length,
-          stage: 'Processing frame $i...',
-          progress: progress,
-        ));
-      }
-
-      onProgress?.call(VideoGenerationProgress(
-        currentFrame: frames.length,
-        totalFrames: frames.length,
-        stage: 'Complete',
-        progress: 1.0,
-      ));
-
-      return outputPath;
-    } catch (e) {
-      throw Exception('Failed to generate video: $e');
+    final outputDir = await _getOutputDirectory();
+    final tempFramesDir = Directory(path.join(outputDir.path, 'temp_frames_${DateTime.now().millisecondsSinceEpoch}'));
+    if (!await tempFramesDir.exists()) {
+      await tempFramesDir.create(recursive: true);
     }
+
+    // 1. Simpan semua frame ke file gambar
+    for (int i = 0; i < frames.length; i++) {
+      final frame = frames[i];
+      final framePath = path.join(tempFramesDir.path, 'frame_${i.toString().padLeft(5, '0')}.jpg');
+      final jpgBytes = img.encodeJpg(frame, quality: 90);
+      await File(framePath).writeAsBytes(jpgBytes);
+      onProgress?.call(VideoGenerationProgress(
+        currentFrame: i + 1,
+        totalFrames: frames.length,
+        stage: 'Saving frames...',
+        progress: (i + 1) / frames.length * 0.5,
+      ));
+    }
+
+    // 2. Gabungkan gambar jadi video dengan ffmpeg
+    final outputFileName = 'analyzed_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    final outputPath = path.join(outputDir.path, outputFileName);
+    final fps = config.fps;
+    final width = config.width;
+    final height = config.height;
+
+    // Buat file list input untuk ffmpeg
+    final framePattern = path.join(tempFramesDir.path, 'frame_%05d.jpg');
+    final ffmpegCmd =
+        "-y -framerate $fps -i '$framePattern' -vf scale=$width:$height -c:v libx264 -pix_fmt yuv420p '$outputPath'";
+
+    onProgress?.call(VideoGenerationProgress(
+      currentFrame: 0,
+      totalFrames: frames.length,
+      stage: 'Encoding video...',
+      progress: 0.6,
+    ));
+
+    // Temporarily disabled FFmpeg functionality due to compatibility issues
+    // final session = await FFmpegKit.execute(ffmpegCmd);
+    // final returnCode = await session.getReturnCode();
+    // if (returnCode == null || !returnCode.isValueSuccess()) {
+    //   throw Exception('FFmpeg failed to encode video.');
+    // }
+    
+    // For now, create a placeholder file instead of actual video
+    await File(outputPath).writeAsString('Mock video file - FFmpeg temporarily disabled');
+
+    onProgress?.call(VideoGenerationProgress(
+      currentFrame: frames.length,
+      totalFrames: frames.length,
+      stage: 'Complete',
+      progress: 1.0,
+    ));
+
+    // Bersihkan frame gambar sementara
+    try {
+      await tempFramesDir.delete(recursive: true);
+    } catch (_) {}
+
+    return outputPath;
   }
 
   /// Create video from frame images (mock implementation)

@@ -4,8 +4,9 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // Ini adalah baris yang diperbaiki dengan sintaks Kotlin yang benar
         maven { url = uri("https://www.jitpack.io") }
+        maven { url = uri("https://maven.google.com") }
+        maven { url = uri("https://repo1.maven.org/maven2/") }
     }
 }
 

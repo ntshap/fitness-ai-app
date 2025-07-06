@@ -3,12 +3,12 @@ import 'package:fitness_ai_app/config/app_text_styles.dart';
 
 class AuthButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const AuthButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
   });
 
   @override

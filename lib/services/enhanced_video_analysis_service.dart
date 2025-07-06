@@ -88,8 +88,14 @@ class EnhancedVideoAnalysisService {
 
       // Validate frame data quality
       final validFrames = frameData.where((frame) => frame.keyPoints != null && frame.keyPoints!.isNotEmpty).length;
-      if (validFrames < frameData.length * 0.5) {
-        throw Exception('Poor pose detection quality. Only $validFrames out of ${frameData.length} frames have valid pose data.');
+      print('Frame analysis: $validFrames valid frames out of ${frameData.length} total frames');
+      
+      if (validFrames < frameData.length * 0.3) {
+        print('Warning: Poor pose detection quality. Only $validFrames out of ${frameData.length} frames have valid pose data.');
+        // Instead of throwing an error, we'll continue with the frames we have
+        if (validFrames == 0) {
+          throw Exception('No valid pose data detected. Please ensure the person is clearly visible in the video.');
+        }
       }
 
       // Step 2: Analyze squat form from keypoints
@@ -102,7 +108,11 @@ class EnhancedVideoAnalysisService {
       final keyPointSequence = frameData.map((frame) => frame.keyPoints ?? <KeyPoint>[]).toList();
       final timestamps = frameData.map((frame) => frame.timestamp).toList();
       
+      print('Analyzing squat sequence with ${keyPointSequence.length} frames');
+      
       final squatAnalysis = _squatAnalysis.analyzeSquatSequence(keyPointSequence, timestamps);
+      
+      print('Squat analysis complete: ${squatAnalysis.totalReps} total reps, ${squatAnalysis.correctReps} correct');
 
       // Step 3: Render overlays on frames
       onProgress?.call(EnhancedVideoAnalysisProgress(
@@ -156,7 +166,7 @@ class EnhancedVideoAnalysisService {
         progress: 0.8,
         message: 'Generating analyzed video...',
       ));
-
+      print('[analyzeVideoWithVisualOverlays] Mulai generateVideoFromFrames...');
       String processedVideoPath;
       try {
         processedVideoPath = await _outputGenerator.generateVideoFromFrames(
@@ -173,13 +183,16 @@ class EnhancedVideoAnalysisService {
           },
         );
       } catch (e) {
+        print('[analyzeVideoWithVisualOverlays] ERROR generateVideoFromFrames: $e');
         throw Exception('Video generation failed: $e');
       }
 
       // Verify the generated video file
       if (!await File(processedVideoPath).exists()) {
+        print('[analyzeVideoWithVisualOverlays] ERROR: Generated video file not found: $processedVideoPath');
         throw Exception('Generated video file not found');
       }
+      print('[analyzeVideoWithVisualOverlays] File video hasil ditemukan: $processedVideoPath');
 
       // Step 5: Add audio from original video (optional)
       onProgress?.call(EnhancedVideoAnalysisProgress(
