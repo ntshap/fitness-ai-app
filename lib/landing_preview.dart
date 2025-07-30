@@ -1,17 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_ai_app/config/app_colors.dart';
 import 'package:fitness_ai_app/config/app_text_styles.dart';
-import 'package:fitness_ai_app/screens/auth/login_screen.dart';
 import 'package:fitness_ai_app/widgets/auth/auth_button.dart';
 
-class LandingScreen extends StatefulWidget {
-  const LandingScreen({super.key});
-
-  @override
-  State<LandingScreen> createState() => _LandingScreenState();
+void main() {
+  runApp(const LandingPreviewApp());
 }
 
-class _LandingScreenState extends State<LandingScreen>
+class LandingPreviewApp extends StatelessWidget {
+  const LandingPreviewApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Landing Page Preview',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: AppColors.background,
+        primaryColor: AppColors.primary,
+        fontFamily: 'Roboto', // Using default font
+      ),
+      home: const LandingPreviewScreen(),
+    );
+  }
+}
+
+class LandingPreviewScreen extends StatefulWidget {
+  const LandingPreviewScreen({super.key});
+
+  @override
+  State<LandingPreviewScreen> createState() => _LandingPreviewScreenState();
+}
+
+class _LandingPreviewScreenState extends State<LandingPreviewScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -68,7 +90,7 @@ class _LandingScreenState extends State<LandingScreen>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -77,66 +99,52 @@ class _LandingScreenState extends State<LandingScreen>
           ),
         ),
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                children: [
-                  // Background decoration elements
-                  _buildBackgroundDecorations(),
-                  
-                  // Main scrollable content
-                  SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SlideTransition(
-                          position: _slideAnimation,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 120), // Space for button
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 40),
-                                
-                                // App logo/icon
-                                _buildAppLogo(),
-                                
-                                const SizedBox(height: 30),
-                                
-                                // Main title
-                                _buildMainTitle(),
-                                
-                                const SizedBox(height: 16),
-                                
-                                // Subtitle
-                                _buildSubtitle(),
-                                
-                                const SizedBox(height: 30),
-                                
-                                // Images showcase
-                                _buildImagesShowcase(size),
-                                
-                                const SizedBox(height: 30),
-                                
-                                // Features list
-                                _buildFeaturesList(),
-                                
-                                const SizedBox(height: 20),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+          child: Stack(
+            children: [
+              // Background decoration elements
+              _buildBackgroundDecorations(),
+              
+              // Main content
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 60),
+                      
+                      // App logo/icon
+                      _buildAppLogo(),
+                      
+                      const SizedBox(height: 40),
+                      
+                      // Main title
+                      _buildMainTitle(),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Subtitle
+                      _buildSubtitle(),
+                      
+                      const Spacer(flex: 1),
+                      
+                      // Images showcase
+                      _buildImagesShowcase(size),
+                      
+                      const Spacer(flex: 2),
+                      
+                      // Features list
+                      _buildFeaturesList(),
+                      
+                      const SizedBox(height: 40),
+                    ],
                   ),
-                  
-                  // Bottom button
-                  _buildBottomButton(context),
-                ],
-              );
-            },
+                ),
+              ),
+              
+              // Bottom button
+              _buildBottomButton(context),
+            ],
           ),
         ),
       ),
@@ -144,48 +152,46 @@ class _LandingScreenState extends State<LandingScreen>
   }
 
   Widget _buildBackgroundDecorations() {
-    return Positioned.fill(
-      child: Stack(
-        children: [
-          // Top right circle
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.primary.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                ),
+    return Stack(
+      children: [
+        // Top right circle
+        Positioned(
+          top: -100,
+          right: -100,
+          child: Container(
+            width: 300,
+            height: 300,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.1),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
-          
-          // Bottom left circle
-          Positioned(
-            bottom: -150,
-            left: -150,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.primary.withOpacity(0.05),
-                    Colors.transparent,
-                  ],
-                ),
+        ),
+        
+        // Bottom left circle
+        Positioned(
+          bottom: -150,
+          left: -150,
+          child: Container(
+            width: 400,
+            height: 400,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.05),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -196,13 +202,13 @@ class _LandingScreenState extends State<LandingScreen>
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withOpacity(0.2),
-            AppColors.primary.withOpacity(0.1),
+            AppColors.primary.withValues(alpha: 0.2),
+            AppColors.primary.withValues(alpha: 0.1),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -220,7 +226,7 @@ class _LandingScreenState extends State<LandingScreen>
     return Column(
       children: [
         ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
+          shaderCallback: (bounds) => const LinearGradient(
             colors: [
               AppColors.primary,
               Colors.white,
@@ -228,7 +234,7 @@ class _LandingScreenState extends State<LandingScreen>
             ],
           ).createShader(bounds),
           child: Text(
-            'SQUATSENSE AI',
+            'AI SQUAT TRAINER',
             style: AppTextStyles.bodyRegular.copyWith(
               letterSpacing: 3.0,
               fontSize: 16,
@@ -239,16 +245,16 @@ class _LandingScreenState extends State<LandingScreen>
         ),
         const SizedBox(height: 16),
         Text(
-          'SMART SQUAT\nTRAINING',
+          'SEMPURNAKAN\nSQUAT ANDA',
           textAlign: TextAlign.center,
           style: AppTextStyles.headline1.copyWith(
-            fontSize: 28,
+            fontSize: 32,
             height: 1.2,
             fontWeight: FontWeight.bold,
             color: Colors.white,
             shadows: [
               Shadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 offset: const Offset(0, 2),
                 blurRadius: 4,
               ),
@@ -276,35 +282,35 @@ class _LandingScreenState extends State<LandingScreen>
 
   Widget _buildImagesShowcase(Size size) {
     return Container(
-      height: size.height * 0.25, // Reduced height
+      height: size.height * 0.35,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Stack(
         alignment: Alignment.center,
         children: [
           // Background glow
           Container(
-            width: 150,
-            height: 150,
+            width: 200,
+            height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppColors.primary.withOpacity(0.1),
+                  AppColors.primary.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
               ),
             ),
           ),
           
-          // Images
+          // Placeholder images
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildAnimatedImage('assets/images/landing_1.png', -0.1, 0),
-              const SizedBox(width: 8),
-              _buildAnimatedImage('assets/images/landing_2.png', 0, 200),
-              const SizedBox(width: 8),
-              _buildAnimatedImage('assets/images/landing_3.png', 0.1, 400),
+              _buildPlaceholderImage(-0.1, 0),
+              const SizedBox(width: 10),
+              _buildPlaceholderImage(0, 200),
+              const SizedBox(width: 10),
+              _buildPlaceholderImage(0.1, 400),
             ],
           ),
         ],
@@ -312,7 +318,7 @@ class _LandingScreenState extends State<LandingScreen>
     );
   }
 
-  Widget _buildAnimatedImage(String path, double rotation, int delay) {
+  Widget _buildPlaceholderImage(double rotation, int delay) {
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 800 + delay),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -323,24 +329,30 @@ class _LandingScreenState extends State<LandingScreen>
           child: Transform.rotate(
             angle: rotation,
             child: Container(
+              width: rotation == 0 ? 120 : 100,
+              height: rotation == 0 ? 240 : 200,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.3),
+                    AppColors.card.withValues(alpha: 0.8),
+                  ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  path,
-                  fit: BoxFit.cover,
-                  width: rotation == 0 ? 100 : 85, // Reduced sizes
-                  height: rotation == 0 ? 200 : 170,
-                ),
+              child: const Icon(
+                Icons.person,
+                color: AppColors.primary,
+                size: 60,
               ),
             ),
           ),
@@ -376,10 +388,10 @@ class _LandingScreenState extends State<LandingScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.card.withOpacity(0.8),
+            color: AppColors.card.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -421,30 +433,19 @@ class _LandingScreenState extends State<LandingScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
               ],
             ),
             child: AuthButton(
-              text: 'MULAI DENGAN SQUATSENSE AI',
+              text: 'MULAI LATIHAN AI ANDA',
               onPressed: () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const LoginScreen(),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      return SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(1.0, 0.0),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Landing page berhasil dibuat! 🎉'),
+                    backgroundColor: AppColors.primary,
                   ),
                 );
               },

@@ -36,47 +36,21 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
   @override
   void initState() {
     super.initState();
-    print('🚀 TRAINING SCREEN INIT STATE START 🚀');
     WidgetsBinding.instance.addObserver(this);
     _poseDetectorService = PoseDetectorService();
     _workoutService = WorkoutService();
     _workoutStartTime = DateTime.now();
-    print('✅ Services initialized, starting camera...');
     _initializeCamera();
-    print('🚀 TRAINING SCREEN INIT STATE END 🚀');
   }
 
   @override
   void dispose() {
-    print('🔥 DISPOSING TRAINING SCREEN 🔥');
-    
-    try {
-      WidgetsBinding.instance.removeObserver(this);
-      print('✅ Observer removed');
-      
-      _frameTimer?.cancel();
-      print('✅ Frame timer cancelled');
-      
-      _saveWorkoutData();
-      print('✅ Workout data saved');
-      
-      if (_cameraController != null) {
-        print('📷 Disposing camera controller...');
-        _cameraController?.dispose();
-        print('✅ Camera disposed');
-      }
-      
-      _poseDetectorService.dispose();
-      print('✅ Pose detector disposed');
-      
-      super.dispose();
-      print('✅ Super dispose completed');
-    } catch (e, stackTrace) {
-      print('❌ Error during dispose: $e');
-      print('📝 Stack trace: $stackTrace');
-    }
-    
-    print('🔥 DISPOSE COMPLETE 🔥');
+    WidgetsBinding.instance.removeObserver(this);
+    _frameTimer?.cancel();
+    _saveWorkoutData();
+    _cameraController?.dispose();
+    _poseDetectorService.close();
+    super.dispose();
   }
 
   @override
@@ -119,22 +93,14 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
   }
 
   Future<void> _initializeCamera() async {
-    print('📷 CAMERA INIT START 📷');
-    
     try {
       var cameraPermission = await Permission.camera.request();
-      print('🔐 Camera permission status: $cameraPermission');
-      
       if (cameraPermission.isGranted) {
-        print('✅ Camera permission granted');
         final cameras = await availableCameras();
-        print('📱 Found ${cameras.length} cameras');
-        
         final frontCamera = cameras.firstWhere(
           (camera) => camera.lensDirection == CameraLensDirection.front,
           orElse: () => cameras.first,
         );
-        print('📷 Selected camera: ${frontCamera.name} (${frontCamera.lensDirection})');
 
         _cameraController = CameraController(
           frontCamera,
@@ -142,61 +108,28 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
           enableAudio: false,
           imageFormatGroup: ImageFormatGroup.yuv420,
         );
-        print('🔧 Camera controller created');
 
         await _cameraController!.initialize();
-        print('✅ Camera initialized successfully');
-        
-        print('🎬 Starting frame processing...');
         _startFrameProcessing();
-        print('✅ Frame processing call completed');
         
         if (mounted) {
-          print('🔄 Widget mounted, updating UI state');
           setState(() {
             _isCameraInitialized = true;
           });
-          print('✅ UI state updated');
-        } else {
-          print('❌ Widget not mounted after camera init');
         }
       } else {
-        print('❌ Camera permission denied: $cameraPermission');
+        print('Camera permission denied');
       }
-    } catch (e, stackTrace) {
-      print('❌ Error initializing camera: $e');
-      print('📝 Stack trace: $stackTrace');
+    } catch (e) {
+      print('Error initializing camera: $e');
     }
-    
-    print('📷 CAMERA INIT END 📷');
   }
 
   void _startFrameProcessing() {
-    print('=== FRAME PROCESSING SETUP ===');
-    print('Camera controller: ${_cameraController != null}');
-    print('Is initialized: ${_cameraController?.value.isInitialized}');
-    print('Is processing: $_isProcessingFrame');
-    print('Is mounted: $mounted');
-    
-    // Try immediate start first
-    if (_cameraController != null && 
-        _cameraController!.value.isInitialized && 
-        !_isProcessingFrame &&
-        mounted) {
-      print('Starting image stream immediately...');
-      _cameraController!.startImageStream(_processCameraImage);
-      return;
-    }
-    
-    // Fallback to timer for delayed initialization
-    _frameTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      print('Timer check: controller=${_cameraController != null}, initialized=${_cameraController?.value.isInitialized}, processing=$_isProcessingFrame, mounted=$mounted');
-      
+    _frameTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
       if (_cameraController != null && 
           _cameraController!.value.isInitialized && 
-          !_isProcessingFrame &&
-          mounted) {
-        print('Starting image stream for pose detection...');
+          !_isProcessingFrame) {
         _cameraController!.startImageStream(_processCameraImage);
         timer.cancel();
       }
@@ -204,25 +137,15 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
-    print('🎥 CAMERA FRAME RECEIVED: ${image.width}x${image.height} format=${image.format.group}');
-    
-    if (_isProcessingFrame || !mounted) {
-      print('⏸️ Skipping frame: processing=$_isProcessingFrame, mounted=$mounted');
-      return;
-    }
+    if (_isProcessingFrame) return;
     
     _isProcessingFrame = true;
-    print('🔄 Starting frame processing...');
     
     try {
-      print('🤖 Calling pose detection service...');
       final keyPoints = await _poseDetectorService.processCameraImage(image);
-      print('✅ Pose detection returned: ${keyPoints?.length ?? 0} keypoints');
       
       if (keyPoints != null && keyPoints.isNotEmpty && mounted) {
-        print('📍 Processing ${keyPoints.length} keypoints for squat analysis');
         final squatAnalysis = _detectSquatFromKeyPoints(keyPoints);
-        print('🏋️ Squat analysis result: $squatAnalysis');
         
         setState(() {
           _keyPoints = keyPoints;
@@ -233,10 +156,6 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
           }
           _isSquatPosition = squatAnalysis['isInPosition'] ?? false;
         });
-        
-        print('Squat analysis: isInPosition=${_isSquatPosition}, count=$_squatCount');
-      } else {
-        print('No keypoints received from pose detection');
       }
     } catch (e) {
       print('Error processing camera image: $e');
@@ -255,9 +174,8 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
         final leftHip = keyPoints[11];
         final rightHip = keyPoints[12];
         
-        // Lower threshold for mock keypoints (0.3) and higher for real AI (0.5)
-        if (leftKnee.score > 0.3 && rightKnee.score > 0.3 && 
-            leftHip.score > 0.3 && rightHip.score > 0.3) {
+        if (leftKnee.score > 0.5 && rightKnee.score > 0.5 && 
+            leftHip.score > 0.5 && rightHip.score > 0.5) {
           
           final avgKneeY = (leftKnee.y + rightKnee.y) / 2;
           final avgHipY = (leftHip.y + rightHip.y) / 2;
@@ -271,17 +189,11 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
             newSquat = true;
           }
           
-          print('Squat detection: kneeY=$avgKneeY, hipY=$avgHipY, diff=$kneeHipDiff, isSquat=$isInSquatPosition');
-          
           return {
             'isInPosition': isInSquatPosition,
             'newSquat': newSquat,
           };
-        } else {
-          print('Keypoint scores too low: knee1=${leftKnee.score}, knee2=${rightKnee.score}, hip1=${leftHip.score}, hip2=${rightHip.score}');
         }
-      } else {
-        print('Not enough keypoints: ${keyPoints.length}');
       }
     } catch (e) {
       print('Error in squat detection: $e');
@@ -449,30 +361,10 @@ class _TrainingScreenState extends State<TrainingScreen> with WidgetsBindingObse
             right: 20,
             child: ElevatedButton(
               onPressed: () async {
-                try {
-                  print('Finishing workout...');
-                  HapticFeedback.mediumImpact();
-                  
-                  // Stop camera first
-                  if (_cameraController != null) {
-                    await _cameraController!.stopImageStream();
-                    print('Camera image stream stopped');
-                  }
-                  
-                  // Save workout data
-                  await _saveWorkoutData();
-                  print('Workout data saved successfully');
-                  
-                  // Safe navigation back
-                  if (mounted && context.mounted) {
-                    print('Navigating back to home screen');
-                    Navigator.of(context).pop();
-                  }
-                } catch (e) {
-                  print('Error finishing workout: $e');
-                  if (mounted && context.mounted) {
-                    Navigator.of(context).pop();
-                  }
+                HapticFeedback.mediumImpact();
+                await _saveWorkoutData();
+                if (mounted) {
+                  Navigator.pop(context);
                 }
               },
               style: ElevatedButton.styleFrom(

@@ -155,6 +155,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _showDeleteDataDialog,
             ),
             
+            const SizedBox(height: 8),
+            ProfileMenuItem(
+              icon: Icons.shield_outlined,
+              title: 'Kebijakan Privasi',
+              subtitle: 'Lihat kebijakan privasi aplikasi',
+              onTap: _showPrivacyPolicy,
+            ),
+            
             const SizedBox(height: 32),
             
             // About Section
@@ -363,6 +371,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
             child: Text('Beri Rating', style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPrivacyPolicy() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: Text('Kebijakan Privasi', style: AppTextStyles.headline2),
+        content: SingleChildScrollView(
+          child: Text(
+            'KEBIJAKAN PRIVASI FITNESS AI APP\n\n'
+            '1. PENGUMPULAN DATA\n'
+            'Kami mengumpulkan data yang Anda berikan secara langsung, seperti:\n'
+            '• Informasi profil (nama, email, usia, tinggi, berat badan)\n'
+            '• Data latihan dan aktivitas fisik\n'
+            '• Video latihan untuk analisis AI\n\n'
+            '2. PENGGUNAAN DATA\n'
+            'Data Anda digunakan untuk:\n'
+            '• Memberikan analisis latihan yang akurat\n'
+            '• Melacak kemajuan fitness Anda\n'
+            '• Meningkatkan layanan aplikasi\n\n'
+            '3. PENYIMPANAN DATA\n'
+            '• Data disimpan secara lokal di perangkat Anda\n'
+            '• Video latihan dihapus otomatis setelah analisis\n'
+            '• Kami tidak menyimpan data di server eksternal\n\n'
+            '4. KEAMANAN\n'
+            'Kami berkomitmen melindungi privasi Anda dengan:\n'
+            '• Enkripsi data sensitif\n'
+            '• Akses terbatas pada data personal\n'
+            '• Tidak membagikan data dengan pihak ketiga\n\n'
+            '5. HAK PENGGUNA\n'
+            'Anda memiliki hak untuk:\n'
+            '• Mengakses data personal Anda\n'
+            '• Menghapus akun dan semua data\n'
+            '• Meminta penjelasan tentang penggunaan data\n\n'
+            'Untuk pertanyaan lebih lanjut, hubungi: privacy@fitnessai.com\n\n'
+            'Terakhir diperbarui: 7 Juli 2025',
+            style: AppTextStyles.bodyRegular.copyWith(fontSize: 12),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),

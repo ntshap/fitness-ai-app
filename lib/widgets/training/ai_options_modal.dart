@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_ai_app/config/app_colors.dart';
 import 'package:fitness_ai_app/screens/training/training_screen.dart';
-import 'package:fitness_ai_app/screens/upload/upload_video_screen.dart'; // Import halaman baru
+import 'package:fitness_ai_app/screens/upload/upload_video_screen.dart';
 
 void showAiOptionsModal(BuildContext context) {
   showModalBottomSheet(
@@ -16,17 +16,43 @@ void showAiOptionsModal(BuildContext context) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ... (kode lainnya tetap sama)
+            const Text(
+              'Choose Training Mode',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            _buildModalOption(
+              context,
+              icon: Icons.videocam_outlined,
+              title: 'Real-time Training',
+              subtitle: 'Live pose detection and form analysis',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => const TrainingScreen())
+                );
+              },
+            ),
+            
             const Divider(color: AppColors.background, height: 24),
+            
             _buildModalOption(
               context,
               icon: Icons.upload_file_outlined,
-              title: 'Unggah Video',
-              subtitle: 'Analisis video latihan yang sudah direkam.',
+              title: 'Upload Video',
+              subtitle: 'Analyze pre-recorded workout videos',
               onTap: () {
-                Navigator.pop(context); // Tutup modal
-                // Aktifkan navigasi ini
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const UploadVideoScreen()));
+                Navigator.pop(context);
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => const UploadVideoScreen())
+                );
               },
             ),
             const SizedBox(height: 16),

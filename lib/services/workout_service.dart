@@ -121,6 +121,7 @@ class WorkoutService {
   Future<Map<String, dynamic>> getWorkoutStats() async {
     try {
       if (!_authService.isLoggedIn || _authService.currentUser == null) {
+        print('User not logged in for workout stats');
         return {
           'workoutCount': 0,
           'totalCalories': 0,
@@ -132,6 +133,7 @@ class WorkoutService {
 
       final userId = _authService.currentUser!['id'];
       if (userId == null) {
+        print('User ID is null');
         return {
           'workoutCount': 0,
           'totalCalories': 0,
@@ -141,11 +143,15 @@ class WorkoutService {
         };
       }
 
+      print('Getting workout stats for user ID: $userId');
+
       // Get all workouts
       final workouts = await _dbHelper.getWorkouts(userId);
       final workoutCount = workouts.length;
       final totalCalories = workouts.fold<int>(0, (sum, workout) =>
           sum + (workout['calories_burned'] as int? ?? 0));
+
+      print('Found $workoutCount workouts with $totalCalories total calories');
 
       // Get all exercises
       int totalExercises = 0;
@@ -154,9 +160,13 @@ class WorkoutService {
         totalExercises += exercises.length;
       }
 
+      print('Found $totalExercises total exercises');
+
       // Get AI analyses
       final analyses = await _dbHelper.getAIAnalysis(userId);
       final analysisCount = analyses.length;
+      
+      print('Found $analysisCount AI analyses');
       
       // Calculate average accuracy from AI analyses
       double averageAccuracy = 0.0;
@@ -166,13 +176,18 @@ class WorkoutService {
         averageAccuracy = totalScore / analyses.length;
       }
 
-      return {
+      print('Average accuracy: $averageAccuracy');
+
+      final stats = {
         'workoutCount': workoutCount,
         'totalCalories': totalCalories,
         'totalExercises': totalExercises,
         'analysisCount': analysisCount,
         'averageAccuracy': averageAccuracy,
       };
+
+      print('Final stats: $stats');
+      return stats;
     } catch (e) {
       print('Error getting workout stats: $e');
       return {

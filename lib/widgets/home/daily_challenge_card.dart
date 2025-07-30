@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_ai_app/config/app_text_styles.dart';
+import 'package:fitness_ai_app/screens/training/training_screen.dart';
 
 class DailyChallengeCard extends StatelessWidget {
   final String imagePath;
@@ -83,7 +84,14 @@ class DailyChallengeCard extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.bottomLeft,
                         child: ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TrainingScreen(),
+                              ),
+                            );
+                          },
                           icon: Icon(
                             Icons.play_arrow,
                             size: (cardHeight * 0.08).clamp(12.0, 16.0),
